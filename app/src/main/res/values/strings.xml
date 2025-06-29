@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Image Meta</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="save">Save</string>
+    <string name="save_all_metadata">Save All Metadata</string>
+    <string name="exif_value">Exif Value</string>
+</resources>

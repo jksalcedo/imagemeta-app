@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Phthalo Green Theme -->
+    <color name="green_primary">#12554B</color> <!-- Deep Phthalo Green -->
+    <color name="green_primary_dark">#0A3832</color> <!-- Darker variant for status bar -->
+    <color name="green_accent">#00A98F</color> <!-- A vibrant, lighter green for accents -->
+    <color name="green_surface">#F0F5F4</color> <!-- Very light green/gray for card backgrounds -->
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_on_surface">#1A1C1B</color>
+
+    <!-- Original Colors (kept for reference if needed) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
