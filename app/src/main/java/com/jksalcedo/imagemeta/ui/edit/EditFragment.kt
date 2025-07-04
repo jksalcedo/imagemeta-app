@@ -100,7 +100,7 @@ class EditFragment : Fragment() {
         var success = false
         val resolver = requireContext().contentResolver
 
-        // Step 1: Create a new image entry in the MediaStore
+        // Create a new image entry in the MediaStore
         val newImageDetails = ContentValues().apply {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_EDITED_$timestamp.jpg")
@@ -111,7 +111,7 @@ class EditFragment : Fragment() {
             }
         }
 
-        // This URI is for the NEW file we are creating. It is writable.
+        // new file
         val newImageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, newImageDetails)
 
         if (newImageUri == null) {
@@ -120,7 +120,7 @@ class EditFragment : Fragment() {
         }
 
         try {
-            // Step 2: Copy the original image data to the new URI
+            // Copy the original image data to the new URI
             originalImageUri?.let { sourceUri ->
                 resolver.openInputStream(sourceUri)?.use { inputStream ->
                     resolver.openOutputStream(newImageUri)?.use { outputStream ->
@@ -129,7 +129,7 @@ class EditFragment : Fragment() {
                 }
             }
 
-            // Step 3: Now, modify the metadata of the NEW file
+            // modify the metadata of the NEW file
             resolver.openFileDescriptor(newImageUri, "rw")?.use { pfd ->
                 val exif = ExifInterface(pfd.fileDescriptor)
                 val updatedData = exifAdapter.getCurrentData()
@@ -180,6 +180,6 @@ object ExifTags {
         ExifInterface.TAG_GPS_ALTITUDE to "GPS Altitude",
         ExifInterface.TAG_GPS_PROCESSING_METHOD to "GPS Processing Method",
         ExifInterface.TAG_GPS_DATESTAMP to "GPS Date Stamp"
-        // any other tags you need from ExifInterface here
+        // any other tags
     )
 }

@@ -49,9 +49,10 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        binding.footerTextView.text = buildString { BuildConfig.VERSION_NAME?.let { append(it) } }
+        // binding.footerTextView.text = buildString { BuildConfig.VERSION_NAME?.let { append(it) } }
 
         binding.selectImageCard.setOnClickListener {
+            // Launch the image picker to select an image
             selectImageLauncher.launch("image/*")
         }
 

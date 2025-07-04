@@ -24,6 +24,7 @@ class SaveFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        // Display the result of the save operation
         binding.resultText.text = if (args.success) "Save Result: Success!" else "Save Result: Failed!"
     }
 
