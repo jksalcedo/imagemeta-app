@@ -7,6 +7,7 @@ import androidx.exifinterface.media.ExifInterface
 import com.drew.metadata.MetadataException
 import com.drew.metadata.iptc.IptcDirectory
 import com.drew.metadata.xmp.XmpDirectory
+import com.jksalcedo.imagemeta.utils.GpsUtils
 import java.io.IOException
 import java.io.InputStream
 
@@ -41,11 +42,27 @@ class EnhancedMetadataExtractor(private val context: Context) {
                 // Extract categorized EXIF data
                 for ((tag, info) in EnhancedExifTags.categorizedTags) {
                     val value = exif.getAttribute(tag) ?: ""
+                    
+                    // Special handling for GPS coordinates
+                    val displayValue = when (tag) {
+                        ExifInterface.TAG_GPS_LATITUDE, ExifInterface.TAG_GPS_LONGITUDE -> {
+                            if (value.isNotEmpty()) {
+                                val (lat, lng) = GpsUtils.parseGpsCoordinates(exif)
+                                when (tag) {
+                                    ExifInterface.TAG_GPS_LATITUDE -> lat?.toString() ?: ""
+                                    ExifInterface.TAG_GPS_LONGITUDE -> lng?.toString() ?: ""
+                                    else -> value
+                                }
+                            } else value
+                        }
+                        else -> value
+                    }
+                    
                     exifData.add(
                         EnhancedMetadata(
                             tag = tag,
                             label = info.first,
-                            value = value,
+                            value = displayValue,
                             category = info.second,
                             format = MetadataFormat.EXIF
                         )

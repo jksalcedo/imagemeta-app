@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.jksalcedo.imagemeta.databinding.FragmentEditBinding
+import com.jksalcedo.imagemeta.utils.GpsUtils
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -32,6 +33,7 @@ class EditFragment : Fragment() {
     private var originalImageUri: Uri? = null
     private lateinit var enhancedMetadataAdapter: EnhancedMetadataAdapter
     private lateinit var metadataExtractor: EnhancedMetadataExtractor
+    private var allMetadata: List<EnhancedMetadata> = listOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,16 +49,63 @@ class EditFragment : Fragment() {
         
         metadataExtractor = EnhancedMetadataExtractor(requireContext())
         setupRecyclerView()
+        setupCategoryFilters()
         loadAllMetadata()
 
         binding.saveButton.setOnClickListener {
             saveMetadataAsNewCopy()
+        }
+        
+        binding.viewLocationButton.setOnClickListener {
+            viewImageLocation()
         }
     }
 
     private fun setupRecyclerView() {
         enhancedMetadataAdapter = EnhancedMetadataAdapter(mutableListOf())
         binding.exifRecyclerView.adapter = enhancedMetadataAdapter
+    }
+    
+    private fun setupCategoryFilters() {
+        binding.chipAll.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipAll.id)
+                enhancedMetadataAdapter.updateMetadata(allMetadata)
+            }
+        }
+        
+        binding.chipBasic.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipBasic.id)
+                filterMetadataByCategory(MetadataCategory.BASIC_INFO)
+            }
+        }
+        
+        binding.chipCamera.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipCamera.id)
+                filterMetadataByCategory(MetadataCategory.CAMERA_SETTINGS)
+            }
+        }
+        
+        binding.chipLocation.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipLocation.id)
+                filterMetadataByCategory(MetadataCategory.LOCATION)
+            }
+        }
+    }
+    
+    private fun uncheckOtherChips(checkedId: Int) {
+        binding.chipAll.isChecked = checkedId == binding.chipAll.id
+        binding.chipBasic.isChecked = checkedId == binding.chipBasic.id
+        binding.chipCamera.isChecked = checkedId == binding.chipCamera.id
+        binding.chipLocation.isChecked = checkedId == binding.chipLocation.id
+    }
+    
+    private fun filterMetadataByCategory(category: MetadataCategory) {
+        val filteredMetadata = allMetadata.filter { it.category == category }
+        enhancedMetadataAdapter.updateMetadata(filteredMetadata)
     }
 
     private fun loadAllMetadata() {
@@ -67,7 +116,7 @@ class EditFragment : Fragment() {
                 binding.selectedImageView.setImageURI(uri)
 
                 // Extract all metadata using enhanced extractor
-                val allMetadata = metadataExtractor.extractAllMetadata(uri)
+                allMetadata = metadataExtractor.extractAllMetadata(uri)
                 
                 if (allMetadata.isEmpty()) {
                     Toast.makeText(requireContext(), "No readable metadata found.", Toast.LENGTH_LONG).show()
@@ -144,6 +193,22 @@ class EditFragment : Fragment() {
             imageUri = null
         )
         findNavController().navigate(action)
+    }
+    
+    private fun viewImageLocation() {
+        // Extract GPS coordinates from current metadata
+        val currentMetadata = enhancedMetadataAdapter.getCurrentMetadata()
+        val latitude = currentMetadata.find { it.tag.contains("GPS_LATITUDE") }?.value ?: "0"
+        val longitude = currentMetadata.find { it.tag.contains("GPS_LONGITUDE") }?.value ?: "0"
+        
+        // Navigate to location fragment (this would need navigation setup)
+        // For now, show a toast with GPS info
+        val gpsInfo = if (latitude != "0" && longitude != "0") {
+            "GPS: $latitude, $longitude"
+        } else {
+            "No GPS coordinates found"
+        }
+        Toast.makeText(requireContext(), gpsInfo, Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroyView() {
