@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.jksalcedo.imagemeta.databinding.FragmentEditBinding
+import com.jksalcedo.imagemeta.utils.GpsUtils
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -30,7 +31,9 @@ class EditFragment : Fragment() {
     private val args: EditFragmentArgs by navArgs()
 
     private var originalImageUri: Uri? = null
-    private lateinit var exifAdapter: ExifAdapter
+    private lateinit var enhancedMetadataAdapter: EnhancedMetadataAdapter
+    private lateinit var metadataExtractor: EnhancedMetadataExtractor
+    private var allMetadata: List<EnhancedMetadata> = listOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,18 +46,66 @@ class EditFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         originalImageUri = args.imageUri.toUri()
-
+        
+        metadataExtractor = EnhancedMetadataExtractor(requireContext())
         setupRecyclerView()
+        setupCategoryFilters()
         loadAllMetadata()
 
         binding.saveButton.setOnClickListener {
             saveMetadataAsNewCopy()
         }
+        
+        binding.viewLocationButton.setOnClickListener {
+            viewImageLocation()
+        }
     }
 
     private fun setupRecyclerView() {
-        exifAdapter = ExifAdapter(mutableListOf())
-        binding.exifRecyclerView.adapter = exifAdapter
+        enhancedMetadataAdapter = EnhancedMetadataAdapter(mutableListOf())
+        binding.exifRecyclerView.adapter = enhancedMetadataAdapter
+    }
+    
+    private fun setupCategoryFilters() {
+        binding.chipAll.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipAll.id)
+                enhancedMetadataAdapter.updateMetadata(allMetadata)
+            }
+        }
+        
+        binding.chipBasic.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipBasic.id)
+                filterMetadataByCategory(MetadataCategory.BASIC_INFO)
+            }
+        }
+        
+        binding.chipCamera.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipCamera.id)
+                filterMetadataByCategory(MetadataCategory.CAMERA_SETTINGS)
+            }
+        }
+        
+        binding.chipLocation.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                uncheckOtherChips(binding.chipLocation.id)
+                filterMetadataByCategory(MetadataCategory.LOCATION)
+            }
+        }
+    }
+    
+    private fun uncheckOtherChips(checkedId: Int) {
+        binding.chipAll.isChecked = checkedId == binding.chipAll.id
+        binding.chipBasic.isChecked = checkedId == binding.chipBasic.id
+        binding.chipCamera.isChecked = checkedId == binding.chipCamera.id
+        binding.chipLocation.isChecked = checkedId == binding.chipLocation.id
+    }
+    
+    private fun filterMetadataByCategory(category: MetadataCategory) {
+        val filteredMetadata = allMetadata.filter { it.category == category }
+        enhancedMetadataAdapter.updateMetadata(filteredMetadata)
     }
 
     private fun loadAllMetadata() {
@@ -64,32 +115,17 @@ class EditFragment : Fragment() {
                 // Load the image into the ImageView for Preview
                 binding.selectedImageView.setImageURI(uri)
 
-                val pfd: ParcelFileDescriptor? = requireContext().contentResolver.openFileDescriptor(uri, "r")
-                pfd?.use { descriptor ->
-                    val exif = ExifInterface(descriptor.fileDescriptor)
-                    val allExifData = mutableListOf<ExifData>()
-
-                    // Iterate through all defined tags and get their values
-                    for ((tag, label) in ExifTags.allTags) {
-                        val value = exif.getAttribute(tag)
-                        if (value != null) {
-                            // If the tag is set, add it to the list
-                            allExifData.add(ExifData(tag, label, value))
-                        } else {
-                            // If the tag is not set, add it with an empty value
-                            allExifData.add(ExifData(tag, label, ""))
-                        }
-                    }
-                    // If no tags were found, add a placeholder
-                    if (allExifData.isEmpty()) {
-                        Toast.makeText(requireContext(), "No readable EXIF data found.", Toast.LENGTH_LONG).show()
-                    }
-
-                    exifAdapter = ExifAdapter(allExifData)
-                    binding.exifRecyclerView.adapter = exifAdapter
+                // Extract all metadata using enhanced extractor
+                allMetadata = metadataExtractor.extractAllMetadata(uri)
+                
+                if (allMetadata.isEmpty()) {
+                    Toast.makeText(requireContext(), "No readable metadata found.", Toast.LENGTH_LONG).show()
+                } else {
+                    enhancedMetadataAdapter.updateMetadata(allMetadata)
                 }
-            } catch (e: IOException) {
-                Log.e("EditFragment", "Error loading EXIF data", e)
+                
+            } catch (e: Exception) {
+                Log.e("EditFragment", "Error loading metadata", e)
                 Toast.makeText(requireContext(), "Could not load image data.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -132,10 +168,13 @@ class EditFragment : Fragment() {
             // modify the metadata of the NEW file
             resolver.openFileDescriptor(newImageUri, "rw")?.use { pfd ->
                 val exif = ExifInterface(pfd.fileDescriptor)
-                val updatedData = exifAdapter.getCurrentData()
+                val updatedMetadata = enhancedMetadataAdapter.getCurrentMetadata()
 
-                for (item in updatedData) {
-                    exif.setAttribute(item.tag, item.value)
+                // Only save EXIF metadata (other formats like IPTC/XMP require different handling)
+                for (item in updatedMetadata) {
+                    if (item.format == MetadataFormat.EXIF && item.isEditable) {
+                        exif.setAttribute(item.tag, item.value)
+                    }
                 }
                 exif.saveAttributes()
                 success = true
@@ -154,6 +193,22 @@ class EditFragment : Fragment() {
             imageUri = null
         )
         findNavController().navigate(action)
+    }
+    
+    private fun viewImageLocation() {
+        // Extract GPS coordinates from current metadata
+        val currentMetadata = enhancedMetadataAdapter.getCurrentMetadata()
+        val latitude = currentMetadata.find { it.tag.contains("GPS_LATITUDE") }?.value ?: "0"
+        val longitude = currentMetadata.find { it.tag.contains("GPS_LONGITUDE") }?.value ?: "0"
+        
+        // Navigate to location fragment (this would need navigation setup)
+        // For now, show a toast with GPS info
+        val gpsInfo = if (latitude != "0" && longitude != "0") {
+            "GPS: $latitude, $longitude"
+        } else {
+            "No GPS coordinates found"
+        }
+        Toast.makeText(requireContext(), gpsInfo, Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroyView() {

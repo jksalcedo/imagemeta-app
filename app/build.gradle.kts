@@ -59,4 +59,10 @@ dependencies {
 
     // ExifInterface for image metadata
     implementation(libs.androidx.exifinterface)
+    
+    // Extended metadata features
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+    implementation(libs.mpandroidchart)
+    implementation(libs.metadata.extractor)
 }
