@@ -12,7 +12,7 @@
         <item name="colorSecondaryVariant">@color/green_accent</item>
         <item name="colorOnSecondary">@color/text_on_primary</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor">@color/green_primary</item>
 
         <!-- Set default background color -->
         <item name="android:colorBackground">@color/green_surface</item>

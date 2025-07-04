@@ -10,10 +10,15 @@
             android:label="Home">
         <action
                 android:id="@+id/action_home_to_edit"
-                app:destination="@id/editFragment" />
+                app:destination="@id/editFragment"/>
         <argument
                 android:name="imageUri"
-                app:argType="string" />
+                app:argType="string"
+                app:nullable="true"/>
+
+        <argument
+                android:name="success"
+                app:argType="boolean"/>
 
     </fragment>
 
@@ -23,22 +28,17 @@
             android:label="Edit Metadata">
         <argument
                 android:name="imageUri"
-                app:argType="string" />
+                app:argType="string"/>
         <action
-                android:id="@+id/action_edit_to_save"
-                app:destination="@id/saveFragment">
+                android:id="@+id/action_edit_to_home"
+                app:destination="@id/homeFragment">
             <argument
                     android:name="success"
-                    app:argType="boolean" />
-        </action>
-    </fragment>
+                    app:argType="boolean"/>
 
-    <fragment
-            android:id="@+id/saveFragment"
-            android:name="com.jksalcedo.imagemeta.ui.save.SaveFragment"
-            android:label="Save Confirmation">
-        <argument
-                android:name="success"
-                app:argType="boolean" />
+            <argument android:name="imageUri"
+                      app:argType="string"
+                      app:nullable="true"/>
+        </action>
     </fragment>
 </navigation>

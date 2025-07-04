@@ -149,7 +149,10 @@ class EditFragment : Fragment() {
             success = false
         }
 
-        val action = EditFragmentDirections.actionEditToSave(success)
+        val action = EditFragmentDirections.actionEditToHome(
+            success,
+            imageUri = null
+        )
         findNavController().navigate(action)
     }
 
