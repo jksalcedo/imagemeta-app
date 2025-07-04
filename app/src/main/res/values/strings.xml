@@ -6,4 +6,23 @@
     <string name="save">Save</string>
     <string name="save_all_metadata">Save All Metadata</string>
     <string name="exif_value">Exif Value</string>
+    
+    <!-- New strings for extended features -->
+    <string name="batch_edit_metadata">Batch Edit Metadata</string>
+    <string name="view_metadata_analytics">View Metadata Analytics</string>
+    <string name="apply_to_all_images">Apply to All Images</string>
+    <string name="image_location">Image Location</string>
+    <string name="metadata_analytics">Metadata Analytics</string>
+    <string name="edit_coordinates">Edit Coordinates</string>
+    <string name="update_location">Update Location</string>
+    <string name="clear_location">Clear Location</string>
+    <string name="latitude_hint">Latitude (-90 to 90)</string>
+    <string name="longitude_hint">Longitude (-180 to 180)</string>
+    <string name="location_help">Tip: You can find coordinates using Google Maps or GPS devices. Right-click on Google Maps to copy coordinates.</string>
+    <string name="camera_models_distribution">Camera Models Distribution</string>
+    <string name="iso_settings_distribution">ISO Settings Distribution</string>
+    <string name="gps_data_availability">GPS Data Availability</string>
+    <string name="analyzing_images">Analyzing %d images</string>
+    <string name="editing_images">Editing %d images</string>
+    <string name="batch_processing_complete">Batch processing complete!\nSuccess: %d\nErrors: %d</string>
 </resources>

@@ -30,6 +30,23 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private val selectMultipleImagesLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val uriStrings = uris.map { it.toString() }.toTypedArray()
+            // Navigate to batch edit or analytics based on user choice
+            // For now, we'll show a simple selection (this would be improved with a proper dialog)
+            if (uris.size == 1) {
+                val action = HomeFragmentDirections.actionHomeToEdit(uris[0].toString())
+                findNavController().navigate(action)
+            } else {
+                // Navigate to batch edit for multiple images
+                // This would need to be implemented in navigation args
+                // val action = HomeFragmentDirections.actionHomeToBatchEdit(uriStrings)
+                // findNavController().navigate(action)
+            }
+        }
+    }
+
     private val takePhotoLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK && photoUri != null) {
@@ -71,6 +88,16 @@ class HomeFragment : Fragment() {
                 putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
             }
             takePhotoLauncher.launch(intent)
+        }
+
+        binding.batchOperationsCard.setOnClickListener {
+            // Launch multi-select for batch operations
+            selectMultipleImagesLauncher.launch("image/*")
+        }
+
+        binding.analyticsCard.setOnClickListener {
+            // Launch multi-select for analytics
+            selectMultipleImagesLauncher.launch("image/*")
         }
     }
 

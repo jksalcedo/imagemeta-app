@@ -30,7 +30,8 @@ class EditFragment : Fragment() {
     private val args: EditFragmentArgs by navArgs()
 
     private var originalImageUri: Uri? = null
-    private lateinit var exifAdapter: ExifAdapter
+    private lateinit var enhancedMetadataAdapter: EnhancedMetadataAdapter
+    private lateinit var metadataExtractor: EnhancedMetadataExtractor
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,7 +44,8 @@ class EditFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         originalImageUri = args.imageUri.toUri()
-
+        
+        metadataExtractor = EnhancedMetadataExtractor(requireContext())
         setupRecyclerView()
         loadAllMetadata()
 
@@ -53,8 +55,8 @@ class EditFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        exifAdapter = ExifAdapter(mutableListOf())
-        binding.exifRecyclerView.adapter = exifAdapter
+        enhancedMetadataAdapter = EnhancedMetadataAdapter(mutableListOf())
+        binding.exifRecyclerView.adapter = enhancedMetadataAdapter
     }
 
     private fun loadAllMetadata() {
@@ -64,32 +66,17 @@ class EditFragment : Fragment() {
                 // Load the image into the ImageView for Preview
                 binding.selectedImageView.setImageURI(uri)
 
-                val pfd: ParcelFileDescriptor? = requireContext().contentResolver.openFileDescriptor(uri, "r")
-                pfd?.use { descriptor ->
-                    val exif = ExifInterface(descriptor.fileDescriptor)
-                    val allExifData = mutableListOf<ExifData>()
-
-                    // Iterate through all defined tags and get their values
-                    for ((tag, label) in ExifTags.allTags) {
-                        val value = exif.getAttribute(tag)
-                        if (value != null) {
-                            // If the tag is set, add it to the list
-                            allExifData.add(ExifData(tag, label, value))
-                        } else {
-                            // If the tag is not set, add it with an empty value
-                            allExifData.add(ExifData(tag, label, ""))
-                        }
-                    }
-                    // If no tags were found, add a placeholder
-                    if (allExifData.isEmpty()) {
-                        Toast.makeText(requireContext(), "No readable EXIF data found.", Toast.LENGTH_LONG).show()
-                    }
-
-                    exifAdapter = ExifAdapter(allExifData)
-                    binding.exifRecyclerView.adapter = exifAdapter
+                // Extract all metadata using enhanced extractor
+                val allMetadata = metadataExtractor.extractAllMetadata(uri)
+                
+                if (allMetadata.isEmpty()) {
+                    Toast.makeText(requireContext(), "No readable metadata found.", Toast.LENGTH_LONG).show()
+                } else {
+                    enhancedMetadataAdapter.updateMetadata(allMetadata)
                 }
-            } catch (e: IOException) {
-                Log.e("EditFragment", "Error loading EXIF data", e)
+                
+            } catch (e: Exception) {
+                Log.e("EditFragment", "Error loading metadata", e)
                 Toast.makeText(requireContext(), "Could not load image data.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -132,10 +119,13 @@ class EditFragment : Fragment() {
             // modify the metadata of the NEW file
             resolver.openFileDescriptor(newImageUri, "rw")?.use { pfd ->
                 val exif = ExifInterface(pfd.fileDescriptor)
-                val updatedData = exifAdapter.getCurrentData()
+                val updatedMetadata = enhancedMetadataAdapter.getCurrentMetadata()
 
-                for (item in updatedData) {
-                    exif.setAttribute(item.tag, item.value)
+                // Only save EXIF metadata (other formats like IPTC/XMP require different handling)
+                for (item in updatedMetadata) {
+                    if (item.format == MetadataFormat.EXIF && item.isEditable) {
+                        exif.setAttribute(item.tag, item.value)
+                    }
                 }
                 exif.saveAttributes()
                 success = true
