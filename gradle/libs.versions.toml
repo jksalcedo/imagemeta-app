@@ -1,6 +1,6 @@
 [versions]
 activityKtx = "1.10.1"
-agp = "8.10.1"
+agp = "8.1.4"
 exifinterface = "1.4.1"
 glide = "4.16.0"
 compiler = "4.16.0"
